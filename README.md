@@ -80,6 +80,16 @@ Run all tests using:
 PYTHONPATH=src pytest tests/
 ```
 
+**Note:** Because the source code is inside the `src` directory, you must set `PYTHONPATH=src` when running tests. This ensures Python can find the `openshift_mcp_server` package. If you are on Windows using PowerShell, use:
+```powershell
+$env:PYTHONPATH="src"; pytest tests/
+```
+Or in CMD:
+```cmd
+set PYTHONPATH=src
+pytest tests/
+```
+
 ## Notes
 - Ensure your environment variables or kubeconfig are set up before running the server.
 - For local development, activate your virtual environment and install requirements first.

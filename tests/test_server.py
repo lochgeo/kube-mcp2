@@ -1,9 +1,10 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from openshift_mcp_server.tools import (
     list_namespaces, list_pods, get_pod_logs, list_deployments, get_cluster_info,
     list_routes, get_route, list_services, get_service, get_all_services,
-    list_tools_and_resources, create_deployment, validate_openshift_manifest
+    create_deployment, validate_openshift_manifest, list_configmaps, list_secrets,
+    list_jobs, list_pvcs, list_ingresses, list_rolebindings
 )
 
 class DummyContext:
@@ -121,3 +122,63 @@ def test_validate_openshift_manifest(ctx):
     bad_manifest = {}
     result = validate_openshift_manifest(bad_manifest, ctx)
     assert result['errors']
+
+def test_list_configmaps(ctx):
+    cm1 = MagicMock()
+    cm1.metadata.name = 'cm1'
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_config_map.return_value.items = [cm1]
+    assert list_configmaps('ns', ctx) == ['cm1']
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_config_map.side_effect = Exception('fail')
+    out = list_configmaps('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
+
+def test_list_secrets(ctx):
+    s1 = MagicMock()
+    s1.metadata.name = 's1'
+    s1.type = 'Opaque'
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_secret.return_value.items = [s1]
+    out = list_secrets('ns', ctx)
+    assert out == [{'name': 's1', 'type': 'Opaque'}]
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_secret.side_effect = Exception('fail')
+    out = list_secrets('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
+
+def test_list_jobs(ctx):
+    job1 = MagicMock()
+    job1.metadata.name = 'job1'
+    ctx.request_context.lifespan_context.batch_api.list_namespaced_job.return_value.items = [job1]
+    out = list_jobs('ns', ctx)
+    assert out == ['job1']
+    ctx.request_context.lifespan_context.batch_api.list_namespaced_job.side_effect = Exception('fail')
+    out = list_jobs('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
+
+def test_list_pvcs(ctx):
+    pvc1 = MagicMock()
+    pvc1.metadata.name = 'pvc1'
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_persistent_volume_claim.return_value.items = [pvc1]
+    out = list_pvcs('ns', ctx)
+    assert out == ['pvc1']
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_persistent_volume_claim.side_effect = Exception('fail')
+    out = list_pvcs('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
+
+def test_list_ingresses(ctx):
+    ing1 = MagicMock()
+    ing1.metadata.name = 'ing1'
+    ctx.request_context.lifespan_context.networking_api.list_namespaced_ingress.return_value.items = [ing1]
+    out = list_ingresses('ns', ctx)
+    assert out == ['ing1']
+    ctx.request_context.lifespan_context.networking_api.list_namespaced_ingress.side_effect = Exception('fail')
+    out = list_ingresses('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
+
+def test_list_rolebindings(ctx):
+    rb1 = MagicMock()
+    rb1.metadata.name = 'rb1'
+    ctx.request_context.lifespan_context.rbac_api.list_namespaced_role_binding.return_value.items = [rb1]
+    out = list_rolebindings('ns', ctx)
+    assert out == ['rb1']
+    ctx.request_context.lifespan_context.rbac_api.list_namespaced_role_binding.side_effect = Exception('fail')
+    out = list_rolebindings('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
