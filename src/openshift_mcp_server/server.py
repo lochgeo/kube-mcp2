@@ -19,6 +19,9 @@ class AppContext:
     k8s_api: client.CoreV1Api
     apps_api: client.AppsV1Api
     route_api: CustomObjectsApi
+    batch_api: client.BatchV1Api
+    networking_api: client.NetworkingV1Api
+    rbac_api: client.RbacAuthorizationV1Api
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
@@ -46,13 +49,26 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
         k8s_api = client.CoreV1Api(api_client)
         apps_api = client.AppsV1Api(api_client)
         route_api = CustomObjectsApi(api_client)
+        batch_api = client.BatchV1Api(api_client)
+        networking_api = client.NetworkingV1Api(api_client)
+        rbac_api = client.RbacAuthorizationV1Api(api_client)
     else:
         config.load_kube_config()
         k8s_api = client.CoreV1Api()
         apps_api = client.AppsV1Api()
         route_api = CustomObjectsApi()
+        batch_api = client.BatchV1Api()
+        networking_api = client.NetworkingV1Api()
+        rbac_api = client.RbacAuthorizationV1Api()
     try:
-        yield AppContext(k8s_api=k8s_api, apps_api=apps_api, route_api=route_api)
+        yield AppContext(
+            k8s_api=k8s_api,
+            apps_api=apps_api,
+            route_api=route_api,
+            batch_api=batch_api,
+            networking_api=networking_api,
+            rbac_api=rbac_api,
+        )
     finally:
         pass
 
@@ -70,5 +86,15 @@ mcp.tool()(list_services)
 mcp.tool()(get_service)
 mcp.resource("cluster://services")(get_all_services)
 mcp.resource("cluster://info")(get_cluster_info)
+mcp.resource("cluster://routes")(list_routes)
+mcp.resource("cluster://pods")(list_pods)
+mcp.resource("cluster://deployments")(list_deployments)
+mcp.resource("cluster://namespaces")(list_namespaces)
+mcp.resource("cluster://configmaps")(list_configmaps)
+mcp.resource("cluster://secrets")(list_secrets)
+mcp.resource("cluster://jobs")(list_jobs)
+mcp.resource("cluster://pvcs")(list_pvcs)
+mcp.resource("cluster://ingresses")(list_ingresses)
+mcp.resource("cluster://rolebindings")(list_rolebindings)
 mcp.tool()(create_deployment)
 mcp.tool()(validate_openshift_manifest)

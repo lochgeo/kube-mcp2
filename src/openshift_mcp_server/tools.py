@@ -81,6 +81,73 @@ def get_service(namespace: str, service_name: str, ctx) -> dict:
         return error_response(f"Failed to get service {service_name}", str(e))
 
 
+def list_configmaps(namespace: str, ctx) -> list:
+    """List all ConfigMaps in the given namespace."""
+    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    try:
+        cms = k8s_api.list_namespaced_config_map(namespace)
+        return [cm.metadata.name for cm in cms.items]
+    except Exception as e:
+        logger.error(f"Failed to list ConfigMaps in {namespace}: {e}")
+        return error_response(f"Failed to list ConfigMaps in {namespace}", str(e))
+
+
+def list_secrets(namespace: str, ctx) -> list:
+    """List all Secrets in the given namespace (only names and types, not data)."""
+    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    try:
+        secrets = k8s_api.list_namespaced_secret(namespace)
+        # Only return name and type, not secret data
+        return [{"name": s.metadata.name, "type": s.type} for s in secrets.items]
+    except Exception as e:
+        logger.error(f"Failed to list Secrets in {namespace}: {e}")
+        return error_response(f"Failed to list Secrets in {namespace}", str(e))
+
+
+def list_jobs(namespace: str, ctx) -> list:
+    """List all Jobs in the given namespace."""
+    batch_api = ctx.request_context.lifespan_context.batch_api
+    try:
+        jobs = batch_api.list_namespaced_job(namespace)
+        return [job.metadata.name for job in jobs.items]
+    except Exception as e:
+        logger.error(f"Failed to list Jobs in {namespace}: {e}")
+        return error_response(f"Failed to list Jobs in {namespace}", str(e))
+
+
+def list_pvcs(namespace: str, ctx) -> list:
+    """List all PersistentVolumeClaims in the given namespace."""
+    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    try:
+        pvcs = k8s_api.list_namespaced_persistent_volume_claim(namespace)
+        return [pvc.metadata.name for pvc in pvcs.items]
+    except Exception as e:
+        logger.error(f"Failed to list PVCs in {namespace}: {e}")
+        return error_response(f"Failed to list PVCs in {namespace}", str(e))
+
+
+def list_ingresses(namespace: str, ctx) -> list:
+    """List all Ingresses in the given namespace."""
+    networking_api = ctx.request_context.lifespan_context.networking_api
+    try:
+        ingresses = networking_api.list_namespaced_ingress(namespace)
+        return [ing.metadata.name for ing in ingresses.items]
+    except Exception as e:
+        logger.error(f"Failed to list Ingresses in {namespace}: {e}")
+        return error_response(f"Failed to list Ingresses in {namespace}", str(e))
+
+
+def list_rolebindings(namespace: str, ctx) -> list:
+    """List all RoleBindings in the given namespace."""
+    rbac_api = ctx.request_context.lifespan_context.rbac_api
+    try:
+        rbs = rbac_api.list_namespaced_role_binding(namespace)
+        return [rb.metadata.name for rb in rbs.items]
+    except Exception as e:
+        logger.error(f"Failed to list RoleBindings in {namespace}: {e}")
+        return error_response(f"Failed to list RoleBindings in {namespace}", str(e))
+
+
 def get_all_services(ctx, namespace: Optional[str] = None) -> dict:
     k8s_api = ctx.request_context.lifespan_context.k8s_api
     try:
