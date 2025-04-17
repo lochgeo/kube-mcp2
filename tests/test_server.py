@@ -36,10 +36,11 @@ def test_list_pods(ctx):
 
 def test_get_pod_logs(ctx):
     ctx.request_context.lifespan_context.k8s_api.read_namespaced_pod_log.return_value = 'logs'
-    assert get_pod_logs('ns', 'pod', ctx) == 'logs'
+    result = get_pod_logs('ns', 'pod', ctx)
+    assert isinstance(result, dict) and result.get('logs') == 'logs'
     ctx.request_context.lifespan_context.k8s_api.read_namespaced_pod_log.side_effect = Exception('fail')
     result = get_pod_logs('ns', 'pod', ctx)
-    assert isinstance(result, dict) and 'error' in result and 'Failed to get pod logs' in result['error']
+    assert isinstance(result, dict) and 'error' in result and 'Failed to get logs for pod pod in ns' in result['error']
 
 def test_list_deployments(ctx):
     dep1 = MagicMock()
@@ -89,18 +90,16 @@ def test_get_all_services(ctx):
     svc2.metadata.namespace = 'ns2'
     svc2.metadata.name = 'svc2'
     ctx.request_context.lifespan_context.k8s_api.list_service_for_all_namespaces.return_value.items = [svc1, svc2]
-    out = get_all_services(ctx)
+    # Test all namespaces (simulate by passing empty string or None)
+    out = get_all_services('', ctx)
     assert 'ns1' in out and 'ns2' in out
     assert out['ns1'] == ['svc1']
     assert out['ns2'] == ['svc2']
+    # Test single namespace
     ctx.request_context.lifespan_context.k8s_api.list_namespaced_service.return_value.items = [svc1]
-    out = get_all_services(ctx, namespace='ns1')
-    assert out['ns1'] == ['svc1']
+    out_ns = get_all_services('ns1', ctx)
+    assert out_ns['ns1'] == ['svc1']
 
-# def test_list_tools_and_resources(ctx):
-#     # Just check it returns a dict with 'tools' and 'resources'
-#     out = list_tools_and_resources(ctx)
-#     assert 'tools' in out and 'resources' in out
 
 def test_create_deployment(ctx):
     dep = MagicMock()

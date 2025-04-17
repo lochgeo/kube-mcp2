@@ -81,22 +81,22 @@ for tool in [
 
 # Register resources
 resource_map = {
-    "cluster://services": get_all_services,
+    "cluster://services/{namespace}": get_all_services,
     "cluster://info": get_cluster_info,
-    "cluster://routes": list_routes,
-    "cluster://pods": list_pods,
-    "cluster://deployments": list_deployments,
+    "cluster://routes/{namespace}": list_routes,
+    "cluster://pods/{namespace}": list_pods,
+    "cluster://deployments/{namespace}": list_deployments,
     "cluster://namespaces": list_namespaces,
-    "cluster://configmaps": list_configmaps,
-    "cluster://secrets": list_secrets,
-    "cluster://jobs": list_jobs,
-    "cluster://pvcs": list_pvcs,
-    "cluster://ingresses": list_ingresses,
-    "cluster://rolebindings": list_rolebindings,
+    "cluster://configmaps/{namespace}": list_configmaps,
+    "cluster://secrets/{namespace}": list_secrets,
+    "cluster://jobs/{namespace}": list_jobs,
+    "cluster://pvcs/{namespace}": list_pvcs,
+    "cluster://ingresses/{namespace}": list_ingresses,
+    "cluster://rolebindings/{namespace}": list_rolebindings,
     "cluster://projects": list_projects,
-    "cluster://serviceaccounts": list_serviceaccounts,
-    "cluster://resourcequotas": list_resourcequotas,
-    "cluster://events": list_events,
+    "cluster://serviceaccounts/{namespace}": list_serviceaccounts,
+    "cluster://resourcequotas/{namespace}": list_resourcequotas,
+    "cluster://events/{namespace}": list_events,
 }
 for uri, func in resource_map.items():
     mcp.resource(uri)(func)

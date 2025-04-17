@@ -5,35 +5,51 @@ from openshift_mcp_server.security import validate_deployment_manifest_security
 
 
 def list_namespaces(ctx) -> List[str]:
-    k8s_api = ctx.request_context.lifespan_context.k8s_api
-    namespaces = k8s_api.list_namespace()
-    return [ns.metadata.name for ns in namespaces.items]
+    """List all namespaces in the cluster."""
+    try:
+        k8s_api = ctx.request_context.lifespan_context.k8s_api
+        namespaces = k8s_api.list_namespace()
+        return [ns.metadata.name for ns in namespaces.items]
+    except Exception as e:
+        logger.error(f"Failed to list namespaces: {e}")
+        return error_response("Failed to list namespaces", str(e))
 
 
 def list_pods(namespace: str, ctx) -> List[str]:
-    k8s_api = ctx.request_context.lifespan_context.k8s_api
-    pods = k8s_api.list_namespaced_pod(namespace)
-    return [pod.metadata.name for pod in pods.items]
-
-
-def get_pod_logs(namespace: str, pod_name: str, ctx, container: Optional[str] = None) -> str:
-    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    """List all pods in the given namespace."""
     try:
+        k8s_api = ctx.request_context.lifespan_context.k8s_api
+        pods = k8s_api.list_namespaced_pod(namespace)
+        return [pod.metadata.name for pod in pods.items]
+    except Exception as e:
+        logger.error(f"Failed to list pods in {namespace}: {e}")
+        return error_response(f"Failed to list pods in {namespace}", str(e))
+
+
+def get_pod_logs(namespace: str, pod_name: str, ctx, container: Optional[str] = None) -> dict:
+    """Get logs for a specific pod (and optionally container) in a namespace."""
+    try:
+        k8s_api = ctx.request_context.lifespan_context.k8s_api
         logs = k8s_api.read_namespaced_pod_log(
             name=pod_name,
             namespace=namespace,
             container=container
         )
-        return logs
+        return {"logs": logs}
     except Exception as e:
         logger.error(f"Failed to get logs for pod {pod_name} in {namespace}: {e}")
-        return error_response("Failed to get pod logs", str(e))
+        return error_response(f"Failed to get logs for pod {pod_name} in {namespace}", str(e))
 
 
 def list_deployments(namespace: str, ctx) -> List[str]:
-    apps_api = ctx.request_context.lifespan_context.apps_api
-    deployments = apps_api.list_namespaced_deployment(namespace)
-    return [dep.metadata.name for dep in deployments.items]
+    """List all deployments in the given namespace."""
+    try:
+        apps_api = ctx.request_context.lifespan_context.apps_api
+        deployments = apps_api.list_namespaced_deployment(namespace)
+        return [dep.metadata.name for dep in deployments.items]
+    except Exception as e:
+        logger.error(f"Failed to list deployments in {namespace}: {e}")
+        return error_response(f"Failed to list deployments in {namespace}", str(e))
 
 
 def list_routes(namespace: str, ctx) -> List[str]:
@@ -146,7 +162,8 @@ def list_rolebindings(namespace: str, ctx) -> list:
         return error_response(f"Failed to list RoleBindings in {namespace}", str(e))
 
 
-def get_all_services(ctx, namespace: Optional[str] = None) -> dict:
+def get_all_services(namespace: str, ctx) -> dict:
+    """List all services in a given namespace."""
     k8s_api = ctx.request_context.lifespan_context.k8s_api
     try:
         if namespace:
