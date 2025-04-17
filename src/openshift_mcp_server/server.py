@@ -12,7 +12,8 @@ from openshift_mcp_server.tools import (
     list_namespaces, list_pods, get_pod_logs, list_deployments, list_routes,
     get_route, list_services, get_service, get_all_services, get_cluster_info,
     create_deployment, validate_openshift_manifest,
-    list_configmaps, list_secrets, list_jobs, list_pvcs, list_ingresses, list_rolebindings
+    list_configmaps, list_secrets, list_jobs, list_pvcs, list_ingresses, list_rolebindings,
+    list_projects, list_serviceaccounts, list_resourcequotas, list_events
 )
 
 @dataclass
@@ -92,6 +93,10 @@ resource_map = {
     "cluster://pvcs": list_pvcs,
     "cluster://ingresses": list_ingresses,
     "cluster://rolebindings": list_rolebindings,
+    "cluster://projects": list_projects,
+    "cluster://serviceaccounts": list_serviceaccounts,
+    "cluster://resourcequotas": list_resourcequotas,
+    "cluster://events": list_events,
 }
 for uri, func in resource_map.items():
     mcp.resource(uri)(func)

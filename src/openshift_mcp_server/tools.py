@@ -1,6 +1,4 @@
-from typing import List, Optional, Dict
-from kubernetes import client
-from kubernetes.client import CustomObjectsApi
+from typing import List, Optional
 from openshift_mcp_server.errors import error_response
 from openshift_mcp_server.logging_utils import logger
 from openshift_mcp_server.security import validate_deployment_manifest_security
@@ -239,3 +237,50 @@ def validate_openshift_manifest(manifest: dict, ctx) -> dict:
     if not labels.get("app"):
         warnings.append("metadata.labels.app is recommended for OpenShift apps.")
     return {"errors": errors, "warnings": warnings}
+
+
+def list_projects(ctx) -> list:
+    """List all OpenShift projects (namespaces with OpenShift metadata)."""
+    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    try:
+        projects = k8s_api.list_namespace()
+        return [ns.metadata.name for ns in projects.items]
+    except Exception as e:
+        if hasattr(e, 'status') and getattr(e, 'status', None) == 403:
+            logger.error(f"Permission denied: {e}")
+            return error_response("Permission denied. You do not have access to this resource.", str(e))
+        logger.error(f"Failed to list projects: {e}")
+        return error_response("Failed to list projects", str(e))
+
+
+def list_serviceaccounts(namespace: str, ctx) -> list:
+    """List all ServiceAccounts in the given namespace."""
+    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    try:
+        sas = k8s_api.list_namespaced_service_account(namespace)
+        return [sa.metadata.name for sa in sas.items]
+    except Exception as e:
+        logger.error(f"Failed to list ServiceAccounts in {namespace}: {e}")
+        return error_response(f"Failed to list ServiceAccounts in {namespace}", str(e))
+
+
+def list_resourcequotas(namespace: str, ctx) -> list:
+    """List all ResourceQuotas in the given namespace."""
+    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    try:
+        rqs = k8s_api.list_namespaced_resource_quota(namespace)
+        return [rq.metadata.name for rq in rqs.items]
+    except Exception as e:
+        logger.error(f"Failed to list ResourceQuotas in {namespace}: {e}")
+        return error_response(f"Failed to list ResourceQuotas in {namespace}", str(e))
+
+
+def list_events(namespace: str, ctx) -> list:
+    """List all Events in the given namespace."""
+    k8s_api = ctx.request_context.lifespan_context.k8s_api
+    try:
+        events = k8s_api.list_namespaced_event(namespace)
+        return [event.metadata.name for event in events.items]
+    except Exception as e:
+        logger.error(f"Failed to list Events in {namespace}: {e}")
+        return error_response(f"Failed to list Events in {namespace}", str(e))
