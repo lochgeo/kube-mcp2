@@ -181,3 +181,48 @@ def test_list_rolebindings(ctx):
     ctx.request_context.lifespan_context.rbac_api.list_namespaced_role_binding.side_effect = Exception('fail')
     out = list_rolebindings('ns', ctx)
     assert isinstance(out, dict) and 'error' in out
+
+def test_list_projects(ctx):
+    ns1 = MagicMock()
+    ns1.metadata.name = 'project1'
+    ctx.request_context.lifespan_context.k8s_api.list_namespace.return_value.items = [ns1]
+    assert 'project1' in __import__('openshift_mcp_server.tools').tools.list_projects(ctx)
+    # Permission denied edge case
+    err = Exception('forbidden')
+    setattr(err, 'status', 403)
+    ctx.request_context.lifespan_context.k8s_api.list_namespace.side_effect = err
+    out = __import__('openshift_mcp_server.tools').tools.list_projects(ctx)
+    assert isinstance(out, dict) and 'Permission denied' in out['error']
+
+
+def test_list_serviceaccounts(ctx):
+    sa1 = MagicMock()
+    sa1.metadata.name = 'sa1'
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_service_account.return_value.items = [sa1]
+    out = __import__('openshift_mcp_server.tools').tools.list_serviceaccounts('ns', ctx)
+    assert out == ['sa1']
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_service_account.side_effect = Exception('fail')
+    out = __import__('openshift_mcp_server.tools').tools.list_serviceaccounts('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
+
+
+def test_list_resourcequotas(ctx):
+    rq1 = MagicMock()
+    rq1.metadata.name = 'rq1'
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_resource_quota.return_value.items = [rq1]
+    out = __import__('openshift_mcp_server.tools').tools.list_resourcequotas('ns', ctx)
+    assert out == ['rq1']
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_resource_quota.side_effect = Exception('fail')
+    out = __import__('openshift_mcp_server.tools').tools.list_resourcequotas('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
+
+
+def test_list_events(ctx):
+    ev1 = MagicMock()
+    ev1.metadata.name = 'ev1'
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_event.return_value.items = [ev1]
+    out = __import__('openshift_mcp_server.tools').tools.list_events('ns', ctx)
+    assert out == ['ev1']
+    ctx.request_context.lifespan_context.k8s_api.list_namespaced_event.side_effect = Exception('fail')
+    out = __import__('openshift_mcp_server.tools').tools.list_events('ns', ctx)
+    assert isinstance(out, dict) and 'error' in out
